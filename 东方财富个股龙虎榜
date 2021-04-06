@@ -1,0 +1,31 @@
+import requests
+import csv
+import json
+from requests.exceptions import RequestException
+
+for i in [1,3,6,12]:
+    file=open('东方财富个股龙虎榜{}M.csv'.format(str(i)),'a',encoding='utf-8-sig',newline='')
+    csv_write=csv.DictWriter(file,fieldnames=['股票名称','股票代码','总交易额度','入榜次数','购入','卖出','净买入'])
+    csv_write.writeheader()
+    
+    for page in range(1,20):
+        print('===========正在抓取第{}页数据==========='.format(page))
+        headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'}
+        url='http://datapc.eastmoney.com/emdatacenter/ranking/individuals?stat={}&st=2&sr=0&p={}&ps=50'.format(str(i),str(page))
+        try:
+            response=requests.get(url,headers=headers)
+            json_data=response.json()
+            data_list=json_data['Data']
+            for data in data_list:
+                data1=data['StockName']
+                data2=data['StockCode']
+                data3=data['SaleAmount']
+                data4=data['RankingTime']
+                data5=data['Buy']
+                data6=data['Sale']
+                data7=data['NetAmount']
+                print(data1,data2,data3,data4,data5,data6,data7)
+                data_dict={'股票名称':data1,'股票代码':data2,'总交易额度':data3,'入榜次数':data4,'购入':data5,'卖出':data6,'净买入':data7}
+                csv_write.writerow(data_dict)
+        except RequestException:
+            print(None)
