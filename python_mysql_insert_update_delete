@@ -1,0 +1,33 @@
+from pymysql import *
+
+def main():
+    #create connection
+    conn=connect(host='localhost', port=3306, user='root', password='111', database='shop', charset='utf8')
+    cursor=conn.cursor()
+    ##插入数据
+    count=cursor.execute('insert into product values("0020","数学3","课本3",100,30,"2021-09-20");')
+    print(count)
+    count=cursor.execute('insert into product values("0021","猫2","动物2",2000,200,"2021-09-20");')
+    print(count)
+    ##删除数据
+    count=cursor.execute('delete from product where product_name like "猫%";') #or like "猫%" or like "%猫%";')
+    print(count)
+    count=cursor.execute('delete from product where product_name like "数学%";') #or like "数学%" or like "%数学%";')
+    print(count)
+    ##更新数据
+    count=cursor.execute('update product set product_name="图书" where product_name="印章";')
+    print(count)
+    count=cursor.execute('update product set product_name="锅子" where product_name like "高%";')
+    print(count)
+
+    conn.commit()
+    cursor.execute("select * from product;")
+    items=cursor.fetchall()
+    for item in items:
+        print(item)
+
+    cursor.close()
+    conn.close()
+
+if __name__=='__main__':
+    main()
