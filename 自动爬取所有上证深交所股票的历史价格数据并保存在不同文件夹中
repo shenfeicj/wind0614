@@ -1,0 +1,101 @@
+import bs4 as bs
+import requests 
+from io import StringIO
+import os   #用于路径转换
+import pandas as pd
+import numpy as np
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 11_2_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36'}
+def GetShStock():
+    res = requests.get('https://www.banban.cn/gupiao/list_sh.html',headers=headers)
+    # 防止中文乱码
+    res.encoding = res.apparent_encoding
+    soup = bs.BeautifulSoup(res.text, 'html.parser')
+    # 从html内容中找到类名为'u-postcontent cz'的div标签
+    content = soup.find('div', {'class': 'u-postcontent cz'})
+    result_sh = []
+    for item in content.findAll('a'):
+        result_sh.append(item.text)
+    return result_sh
+
+def GetSzStock():
+    res = requests.get('https://www.banban.cn/gupiao/list_sz.html',headers=headers)
+    #防止中文乱码
+    res.encoding = res.apparent_encoding
+    soup = bs.BeautifulSoup(res.text,'html.parser')
+    #从html内容中找到类名为'u-postcontent cz'的div标签
+    content = soup.find('div',{'class':'u-postcontent cz'})
+    result_sz= []
+    for item in content.findAll('a'):
+        result_sz.append(item.text)
+    return result_sz
+
+def format_data(filename_sh,filename_sz):
+    #把股票名字和代码分别赋值给两个变量
+    stock_name_sh=[]
+    stock_code_sh=[]
+    for item in filename_sh:
+        stock_code_sh.append(item[-7:-1])
+        stock_name_sh.append(item[0:-8])
+    stock_name_sz=[]
+    stock_code_sz=[]
+    #把股票名字和代码分别赋值给两个变量
+    for item in filename_sz:
+        stock_code_sz.append(item[-7:-1])
+        stock_name_sz.append(item[0:-8])
+    #检查是否是自己需要的数据
+    ## print(stock_code_sz[0:5])
+    ## print(stock_name_sz[0:5])
+    #以股票名字为文件名，把csv文件名保存在一个LIST里面，方便后面的function里面使用
+    file_name_sh=[]
+    for item in stock_name_sh:
+        file_name_sh.append(str(item)+'.csv')
+    file_name_sz=[]
+    for item in stock_name_sz:
+        file_name_sz.append(str(item)+'.csv')
+    return [stock_code_sh,stock_name_sh,file_name_sh,stock_code_sz,stock_name_sz,file_name_sz]
+
+#建立一个function分别输入股票CODE用来确定URL,NAME用来变量赋值，NAME.CSV用来保存数据为CSV形式
+#用TRY EXCEPT语句来解决卡顿或者个别网页读取错误情况
+#下载所有上证A股股票价格
+def get_SHstock_price_by_code(code,name,filename):
+    os.chdir('/Users/wind/Desktop/python/2021/youtube_andrew_数据统计/stock_analysis/stock_data_sh')
+    for item,i,j,num in zip(code,name,filename,np.arange(1,len(code)+1,1)):
+        try:
+            site='https://query1.finance.yahoo.com/v7/finance/download/'+str(item)+'.ss?period1=0&period2=3549258857&interval=1d&events=history&crumb=hP2rOschxO0'
+            response=requests.get(site,headers=headers)
+            print(response.status_code)
+            print('------>正在下载第'+str(num)+'只股票数据<------')
+            i=pd.read_csv(StringIO(response.text),delimiter=',')
+            i=i.dropna(axis=0,how='any')
+            i.to_csv(str(j))
+        except:
+            return None
+
+#建立一个function分别输入股票CODE用来确定URL,NAME用来变量赋值，NAME.CSV用来保存数据为CSV形式
+#用TRY EXCEPT语句来解决卡顿或者个别网页读取错误情况
+#下载所有深A股股票价格
+def get_SZstock_price_by_code(code,name,filename):
+    os.chdir('/Users/wind/Desktop/python/2021/youtube_andrew_数据统计/stock_analysis/stock_data_sz')
+    for item,i,j,num in zip(code,name,filename,np.arange(1,len(code)+1,1)):
+        try:
+            site='https://query1.finance.yahoo.com/v7/finance/download/'+str(item)+'.sz?period1=0&period2=3549258857&interval=1d&events=history&crumb=hP2rOschxO0'
+            response=requests.get(site,headers=headers)
+            print(response.status_code)
+            print('------>正在下载第'+str(num)+'只股票数据<------')
+            i=pd.read_csv(StringIO(response.text),delimiter=',')
+            i=i.dropna(axis=0,how='any')
+            i.to_csv(str(j))
+        except:
+            return None
+
+def main():
+    result_sh=GetShStock()
+    result_sz=GetSzStock()
+    result=format_data(result_sh,result_sz)
+    [stock_code_sh,stock_name_sh,filename_sh,stock_code_sz,stock_name_sz,filename_sz]=result
+    get_SHstock_price_by_code(stock_code_sh, stock_name_sh, filename_sh)
+    get_SZstock_price_by_code(stock_code_sz, stock_name_sz, filename_sz)
+
+if __name__=='__main__':
+    main()
+
